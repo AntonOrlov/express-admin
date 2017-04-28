@@ -78,9 +78,18 @@ function initDatabase (args, done) {
             schema.getData(client, function (err, data) {
                 if (err) return done(err);
                 // write back the settings
+                var _data = {};
+                var tables = args.config.app.allowedTables
+                if (tables) {
+                    tables.forEach(function(tableName) {
+                        _data[tableName] = data[tableName]
+                    });
+                } else {
+                    _data = data;
+                }
                 var fpath = path.join(args.dpath, 'settings.json'),
-                    updated = settings.refresh(args.settings, data);
-                fs.writeFileSync(fpath, JSON.stringify(updated, null, 4), 'utf8');
+                    updated = settings.refresh(args.settings, _data);
+                if (!tables) fs.writeFileSync(fpath, JSON.stringify(updated, null, 4), 'utf8');
 
                 args.settings = updated;
                 done();
@@ -222,6 +231,7 @@ function initServer (args) {
             return dpath;
         })()));
 
+    if (args.config.app.upload) app.use('/upload', serveStatic(args.config.app.upload))
     if (!args.debug) app.set('view cache', true);
 
     // register custom static local paths
