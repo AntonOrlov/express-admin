@@ -113,6 +113,13 @@ function initSettings (args) {
         }
         return langs;
     }());
+    var defaultLang = args.config.app.defaultLanguage;
+    if (Array.isArray(defaultLang)) {
+        args.defaultLang = defaultLang[0];
+        args.langs[defaultLang[0]] = require(defaultLang[1]);
+    } else {
+        args.defaultLang = defaultLang;
+    }
 
     // slug to table map
     args.slugs = (function () {
@@ -231,7 +238,8 @@ function initServer (args) {
         res.locals._admin = args;
 
         // i18n
-        var lang = req.cookies.lang || 'en';
+        var lang = req.cookies.lang ||
+            (args.defaultLang && args.defaultLang in args.langs ? args.defaultLang : 'en');
         res.cookie('lang', lang, {path: '/', maxAge: 900000000});
         moment.locale(lang == 'cn' ? 'zh-cn' : lang);
 
@@ -242,6 +250,7 @@ function initServer (args) {
         res.locals.themes = args.themes;
         res.locals.layouts = args.layouts;
         res.locals.languages = args.languages;
+        res.locals.defaultTheme = args.config.app.defaultTheme || 'default';
 
         // required for custom views
         res.locals._admin.views = app.get('views');
